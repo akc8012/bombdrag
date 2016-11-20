@@ -11,6 +11,10 @@ states =
 	Splash: 0, Game: 1, Score: 2
 };
 
+var fingerDown = false,
+fingerX = -1,
+fingerY = -1;
+
 function main()
 {
 	canvas = document.createElement("canvas");
@@ -18,17 +22,23 @@ function main()
 	width = window.innerWidth;
 	height = window.innerHeight;
 
-	var evt = "touchstart";
+	var evtPress = "touchstart";
+	var evtDrag = "";//"touchstart";
+	var evtRelease = "touchend";
 	if (width >= 500)
 	{
 		width = 320;
 		height = 480;
 		canvas.style.border = "1px solid #000";
-		evt = "mousedown";
+		evtPress = "mousedown";
+		evtDrag = "mousemove";
+		evtRelease = "mouseup";
 	}
 	scaleFactor = width/320;
 
-	document.addEventListener(evt, onpress);
+	document.addEventListener(evtPress, onpress);
+	document.addEventListener(evtDrag, ondrag);
+	document.addEventListener(evtRelease, onrelease);
 	canvas.width = width;
 	canvas.height = height;
 	ctx = canvas.getContext("2d");
@@ -44,11 +54,34 @@ function init()
 {
 	currentstate = states.Splash;
 	frames = 0;
+
+	bomb.init(12, 16);
 }
 
 function onpress(evt)
 {
-	console.log("press!");
+	fingerX = evt.offsetX;
+	fingerY = evt.offsetY;
+	bomb.press(fingerX, fingerY);
+	fingerDown = true;
+}
+
+function ondrag(evt)
+{
+	if (fingerDown)
+	{
+		fingerX = evt.offsetX;
+		fingerY = evt.offsetY;
+		bomb.drag(fingerX, fingerY);
+	}
+}
+
+function onrelease(evt)
+{
+	fingerX = -1;
+	fingerY = -1;
+	bomb.release();
+	fingerDown = false;
 }
 
 function loop()
@@ -70,7 +103,7 @@ function draw()
 	ctx.fillStyle = "#fff";
 	ctx.fillRect(0, 0, width, height);
 
-	s_player[0].draw(ctx, frames, 0);
+	bomb.draw(ctx);
 }
 
 main();
