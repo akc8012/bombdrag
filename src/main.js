@@ -9,7 +9,8 @@ currentstate,
 states =
 {
 	Splash: 0, Game: 1, Score: 2
-};
+},
+onTouchDevice;
 
 var fingerDown = false,
 fingerX = -1,
@@ -22,23 +23,31 @@ function main()
 	width = window.innerWidth;
 	height = window.innerHeight;
 
-	var evtPress = "touchstart";
-	var evtDrag = "";//"touchstart";
-	var evtRelease = "touchend";
 	if (width >= 500)
 	{
 		width = 320;
 		height = 480;
-		canvas.style.border = "1px solid #000";
+		//canvas.style.border = "1px solid #000";
 		evtPress = "mousedown";
 		evtDrag = "mousemove";
 		evtRelease = "mouseup";
 	}
 	scaleFactor = width/320;
 
+	var evtPress = "mousedown";
+	var evtDrag = "mousemove";
+	var evtRelease = "mouseup";
+	onTouchDevice = isTouchDevice();
+	if (onTouchDevice)
+	{
+		evtPress = "touchstart";
+		evtDrag = "touchmove";
+		evtRelease = "touchend";
+	}
 	document.addEventListener(evtPress, onpress);
 	document.addEventListener(evtDrag, ondrag);
 	document.addEventListener(evtRelease, onrelease);
+
 	canvas.width = width;
 	canvas.height = height;
 	ctx = canvas.getContext("2d");
@@ -49,19 +58,35 @@ function main()
 	loop();
 }
 
+function isTouchDevice()
+{
+	return 'ontouchstart' in window        // works on most browsers 
+		|| navigator.maxTouchPoints;       // works on IE10/11 and Surface
+};
+
 // calling this will basically reset the game
 function init()
 {
 	currentstate = states.Splash;
 	frames = 0;
 
-	bomb.init(12, 16);
+	bomb.init(40*scaleFactor, 40*scaleFactor, 20*scaleFactor);
+}
+
+function getFingerX(evt)
+{
+	return onTouchDevice ? evt.touches[0].pageX : evt.clientX;
+}
+
+function getFingerY(evt)
+{
+	return onTouchDevice ? evt.touches[0].pageY : evt.clientY;
 }
 
 function onpress(evt)
 {
-	fingerX = evt.offsetX;
-	fingerY = evt.offsetY;
+	fingerX = getFingerX(evt);
+	fingerY = getFingerY(evt);
 	bomb.press(fingerX, fingerY);
 	fingerDown = true;
 }
@@ -70,8 +95,8 @@ function ondrag(evt)
 {
 	if (fingerDown)
 	{
-		fingerX = evt.offsetX;
-		fingerY = evt.offsetY;
+		fingerX = getFingerX(evt);
+		fingerY = getFingerY(evt);
 		bomb.drag(fingerX, fingerY);
 	}
 }
@@ -100,10 +125,10 @@ function update()
 function draw()
 {
 	// redraw background over contents of prior frame
-	ctx.fillStyle = "#fff";
+	ctx.fillStyle = "#333";
 	ctx.fillRect(0, 0, width, height);
 
-	bomb.draw(ctx);
+	bomb.draw(ctx, scaleFactor);
 }
 
 main();
