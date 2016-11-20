@@ -3,7 +3,7 @@ canvas,
 ctx,
 width,
 height,
-scaleFactor,
+sf,
 frames,
 currentstate,
 states =
@@ -28,11 +28,8 @@ function main()
 		width = 320;
 		height = 480;
 		//canvas.style.border = "1px solid #000";
-		evtPress = "mousedown";
-		evtDrag = "mousemove";
-		evtRelease = "mouseup";
 	}
-	scaleFactor = width/320;
+	sf = width/320;
 
 	var evtPress = "mousedown";
 	var evtDrag = "mousemove";
@@ -53,7 +50,7 @@ function main()
 	ctx = canvas.getContext("2d");
 	document.body.appendChild(canvas);
 
-	initSprites();
+	initSprites(sf);
 	init();
 	loop();
 }
@@ -70,34 +67,41 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	bomb.init(40*scaleFactor, 40*scaleFactor, 20*scaleFactor);
+	bomb.init(40, 40, 20);
 }
 
-function getFingerX(evt)
+function getMousePos(canvas, evt)
 {
-	return onTouchDevice ? evt.touches[0].pageX : evt.clientX;
+	var rect = canvas.getBoundingClientRect();
+	return {
+		x: evt.clientX - rect.left,
+		y: evt.clientY - rect.top
+	};
 }
 
-function getFingerY(evt)
+function getFinger(evt)
 {
-	return onTouchDevice ? evt.touches[0].pageY : evt.clientY;
+	return {
+		x: onTouchDevice ? evt.touches[0].pageX : getMousePos(canvas, evt).x,
+		y: onTouchDevice ? evt.touches[0].pageY : getMousePos(canvas, evt).y
+	};
 }
 
 function onpress(evt)
 {
-	fingerX = getFingerX(evt);
-	fingerY = getFingerY(evt);
-	bomb.press(fingerX, fingerY);
+	fingerX = getFinger(evt).x;
+	fingerY = getFinger(evt).y;
+	bomb.press(fingerX, fingerY, sf);
 	fingerDown = true;
 }
 
 function ondrag(evt)
 {
-	if (fingerDown)
+	if (fingerDown && bomb.pressed)
 	{
-		fingerX = getFingerX(evt);
-		fingerY = getFingerY(evt);
-		bomb.drag(fingerX, fingerY);
+		fingerX = getFinger(evt).x;
+		fingerY = getFinger(evt).y;
+		bomb.drag(fingerX, fingerY, sf);
 	}
 }
 
@@ -128,7 +132,7 @@ function draw()
 	ctx.fillStyle = "#333";
 	ctx.fillRect(0, 0, width, height);
 
-	bomb.draw(ctx, scaleFactor);
+	bomb.draw(ctx, sf);
 }
 
 main();
