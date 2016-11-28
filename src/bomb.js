@@ -22,7 +22,9 @@ Bomb.prototype.press = function(x, y, sf)
 		this.offsetX = x - this.x;
 		this.offsetY = y - this.y;
 		this.pressed = true;
+		return true;
 	}
+	return false;
 }
 
 Bomb.prototype.drag = function(x, y, sf)

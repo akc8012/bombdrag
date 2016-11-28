@@ -14,7 +14,7 @@ states =
 },
 onTouchDevice;
 
-var bomb,
+var bombs = [],
 fingerDown = false,
 fingerX = -1,
 fingerY = -1;
@@ -70,7 +70,12 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	bomb = new Bomb(40, 40, 20);
+	bombs.push(new Bomb(40, 40, 20));
+	bombs.push(new Bomb(100, 200, 20));
+	bombs.push(new Bomb(23, 73, 20));
+	bombs.push(new Bomb(65, 52, 20));
+	bombs.push(new Bomb(52, 7, 20));
+	bombs.push(new Bomb(12, 1, 20));
 }
 
 function getMousePos(canvas, evt)
@@ -94,17 +99,38 @@ function onpress(evt)
 {
 	fingerX = getFinger(evt).x;
 	fingerY = getFinger(evt).y;
-	bomb.press(fingerX, fingerY, sf);
 	fingerDown = true;
+
+	for (var i = bombs.length-1; i >= 0; i--)
+	{
+		if (bombs[i].press(fingerX, fingerY, sf))
+		{
+			swapBombToBot(i);
+			break;
+		}
+	}
+}
+
+function swapBombToBot(ndx)
+{
+	var temp = bombs[bombs.length-1];
+	bombs[bombs.length-1] = bombs[ndx];
+	bombs[ndx] = temp;
 }
 
 function ondrag(evt)
 {
-	if (fingerDown && bomb.pressed)
+	if (fingerDown)
 	{
-		fingerX = getFinger(evt).x;
-		fingerY = getFinger(evt).y;
-		bomb.drag(fingerX, fingerY, sf);
+		for (var i = 0; i < bombs.length; i++)
+		{
+			if (bombs[i].pressed)
+			{
+				fingerX = getFinger(evt).x;
+				fingerY = getFinger(evt).y;
+				bombs[i].drag(fingerX, fingerY, sf);
+			}
+		}
 	}
 }
 
@@ -112,8 +138,10 @@ function onrelease(evt)
 {
 	fingerX = -1;
 	fingerY = -1;
-	bomb.release();
 	fingerDown = false;
+
+	for (var i = 0; i < bombs.length; i++)
+		bombs[i].release();
 }
 
 function loop()
@@ -135,7 +163,13 @@ function draw()
 	ctx.fillStyle = "#333";
 	ctx.fillRect(0, 0, width, height);
 
-	bomb.draw(ctx, sf);
+	for (var i = 0; i < bombs.length; i++)
+		bombs[i].draw(ctx, sf);
+}
+
+function print(msg)
+{
+	console.log(msg);
 }
 
 main();
