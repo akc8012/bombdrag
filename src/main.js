@@ -1,3 +1,5 @@
+"use strict";
+
 var
 canvas,
 ctx,
@@ -12,7 +14,8 @@ states =
 },
 onTouchDevice;
 
-var fingerDown = false,
+var bomb,
+fingerDown = false,
 fingerX = -1,
 fingerY = -1;
 
@@ -67,7 +70,7 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	bomb.init(40, 40, 20);
+	bomb = new Bomb(40, 40, 20);
 }
 
 function getMousePos(canvas, evt)
