@@ -70,12 +70,17 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	bombs.push(new Bomb(40, 40, 20));
-	bombs.push(new Bomb(100, 200, 20));
-	bombs.push(new Bomb(23, 73, 20));
-	bombs.push(new Bomb(65, 52, 20));
-	bombs.push(new Bomb(52, 7, 20));
-	bombs.push(new Bomb(12, 1, 20));
+	var radiusSF = 20*sf;
+	for (var i = 0; i < 6; i++)
+		bombs.push(new Bomb(randomRange(radiusSF, width-radiusSF), 
+			randomRange(radiusSF, height-radiusSF), radiusSF));
+}
+
+function randomRange(min, max)
+{
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min)) + min;
 }
 
 function getMousePos(canvas, evt)

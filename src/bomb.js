@@ -15,24 +15,29 @@ Bomb.prototype.update = function()
 	
 }
 
-Bomb.prototype.press = function(x, y, sf)
+Bomb.prototype.press = function(fingerX, fingerY)
 {
-	if (Math.abs(x - this.x) < this.radius && Math.abs(y - this.y) < this.radius)
+	var xDist = Math.abs(fingerX - this.x);
+	var yDist = Math.abs(fingerY - this.y);
+	var distance = (xDist*xDist) + (yDist*yDist);
+	distance = Math.sqrt(distance);
+
+	if (distance < this.radius)
 	{
-		this.offsetX = x - this.x;
-		this.offsetY = y - this.y;
+		this.offsetX = fingerX - this.x;
+		this.offsetY = fingerY - this.y;
 		this.pressed = true;
 		return true;
 	}
 	return false;
 }
 
-Bomb.prototype.drag = function(x, y, sf)
+Bomb.prototype.drag = function(fingerX, fingerY)
 {
-	this.x = x - this.offsetX;
-	this.y = y - this.offsetY;
+	this.x = fingerX - this.offsetX;
+	this.y = fingerY - this.offsetY;
 
-	var wallDist = 28*sf;
+	var wallDist = this.radius;
 
 	if (this.x-wallDist < 0)
 		this.x = wallDist;
@@ -51,11 +56,11 @@ Bomb.prototype.release = function()
 	this.pressed = false;
 }
 
-Bomb.prototype.draw = function(ctx, sf)
+Bomb.prototype.draw = function(ctx)
 {
 	ctx.beginPath();
-	//ctx.arc(this.x, this.y, this.radius*sf * (this.pressed ? 1.3 : 1), 0, 2*Math.PI);
-	ctx.arc(this.x, this.y, this.radius*sf, 0, 2*Math.PI);
+	//ctx.arc(this.x, this.y, this.radius * (this.pressed ? 1.3 : 1), 0, 2*Math.PI);
+	ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI);
 	ctx.fillStyle = this.pressed ? "red" : "cyan";
 	ctx.fill();
 }
