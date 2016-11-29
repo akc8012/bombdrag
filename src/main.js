@@ -16,8 +16,9 @@ onTouchDevice;
 
 var bombs = [],
 fingerDown = false,
-fingerX = -1,
-fingerY = -1;
+finger = new Vec2(-1, -1);
+
+var touches = 0;
 
 function main()
 {
@@ -70,10 +71,10 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	var radiusSF = 20*sf;
-	for (var i = 0; i < 6; i++)
-		bombs.push(new Bomb(randomRange(radiusSF, width-radiusSF), 
-			randomRange(radiusSF, height-radiusSF), radiusSF));
+	var radius = 25*sf;
+	for (var i = 0; i < 12; i++)
+		bombs.push(new Bomb(randomRange(radius, width-radius), 
+			randomRange(radius, height-radius), radius));
 }
 
 function randomRange(min, max)
@@ -102,13 +103,16 @@ function getFinger(evt)
 
 function onpress(evt)
 {
-	fingerX = getFinger(evt).x;
-	fingerY = getFinger(evt).y;
+	finger.x = getFinger(evt).x;
+	finger.y = getFinger(evt).y;
 	fingerDown = true;
+
+	if (evt.touches)
+		touches = evt.touches.length;
 
 	for (var i = bombs.length-1; i >= 0; i--)
 	{
-		if (bombs[i].press(fingerX, fingerY, sf))
+		if (bombs[i].press(finger.x, finger.y, sf))
 		{
 			swapBombToBot(i);
 			break;
@@ -131,9 +135,9 @@ function ondrag(evt)
 		{
 			if (bombs[i].pressed)
 			{
-				fingerX = getFinger(evt).x;
-				fingerY = getFinger(evt).y;
-				bombs[i].drag(fingerX, fingerY, sf);
+				finger.x = getFinger(evt).x;
+				finger.y = getFinger(evt).y;
+				bombs[i].drag(finger.x, finger.y, sf);
 			}
 		}
 	}
@@ -141,9 +145,10 @@ function ondrag(evt)
 
 function onrelease(evt)
 {
-	fingerX = -1;
-	fingerY = -1;
+	finger.x = -1;
+	finger.y = -1;
 	fingerDown = false;
+	touches = 0;
 
 	for (var i = 0; i < bombs.length; i++)
 		bombs[i].release();
@@ -170,6 +175,10 @@ function draw()
 
 	for (var i = 0; i < bombs.length; i++)
 		bombs[i].draw(ctx, sf);
+
+	ctx.fillStyle = '#fff';
+	ctx.font = "30px Arial";
+	ctx.fillText(touches, 10, 50);
 }
 
 function print(msg)
