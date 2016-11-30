@@ -12,3 +12,8 @@ function distance(x, y)
 	dist = Math.sqrt(distance);
 	return dist;
 }
+
+function print(msg)
+{
+	console.log(msg);
+}

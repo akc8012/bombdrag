@@ -14,11 +14,17 @@ states =
 },
 onTouchDevice;
 
-var bombs = [],
-fingerDown = false,
-finger = new Vec2(-1, -1);
+function Finger(pos, index)
+{
+	this.pos = pos;
+	this.index = index;
+}
 
-var touches = 0;
+var bombs = [],
+fingers = [];
+
+var touches = 0;	// used for debugging, not actually needed
+var removeType = "";
 
 function main()
 {
@@ -88,56 +94,57 @@ function getMousePos(canvas, evt)
 {
 	var rect = canvas.getBoundingClientRect();
 	return {
-		x: evt.clientX - rect.left,
+		x: evt.clientX - rect.left, 
 		y: evt.clientY - rect.top
 	};
 }
 
-function getFinger(evt)
+function getFinger(evt, i)
 {
-	return {
-		x: onTouchDevice ? evt.touches[0].pageX : getMousePos(canvas, evt).x,
-		y: onTouchDevice ? evt.touches[0].pageY : getMousePos(canvas, evt).y
-	};
+	return new Vec2(
+		onTouchDevice ? evt.touches[i].pageX : getMousePos(canvas, evt).x,
+		onTouchDevice ? evt.touches[i].pageY : getMousePos(canvas, evt).y
+	);
+}
+
+function getReleasedFinger(evt)
+{
+	return new Vec2(
+		onTouchDevice ? evt.changedTouches[0].pageX : getMousePos(canvas, evt).x,
+		onTouchDevice ? evt.changedTouches[0].pageY : getMousePos(canvas, evt).y
+	);
 }
 
 function onpress(evt)
 {
-	finger.x = getFinger(evt).x;
-	finger.y = getFinger(evt).y;
-	fingerDown = true;
-
-	if (evt.touches)
-		touches = evt.touches.length;
-
-	for (var i = bombs.length-1; i >= 0; i--)
+	var loops = onTouchDevice ? evt.touches.length : 1;
+	for (var i = 0; i < loops; i++)
 	{
-		if (bombs[i].press(finger.x, finger.y, sf))
+		if (evt.touches)
+			touches = evt.touches.length;
+
+		for (var j = bombs.length-1; j >= 0; j--)
 		{
-			swapBombToBot(i);
-			break;
+			if (bombs[j].press(getFinger(evt, i), i))
+			{
+				fingers.push(new Finger(getFinger(evt, i), i));
+				swapBombToBot(j);
+				break;
+			}
 		}
 	}
 }
 
-function swapBombToBot(ndx)
-{
-	var temp = bombs[bombs.length-1];
-	bombs[bombs.length-1] = bombs[ndx];
-	bombs[ndx] = temp;
-}
-
 function ondrag(evt)
 {
-	if (fingerDown)
+	for (var i = 0; i < fingers.length; i++)
 	{
-		for (var i = 0; i < bombs.length; i++)
+		for (var j = 0; j < bombs.length; j++)
 		{
-			if (bombs[i].pressed)
+			if (bombs[j].fingerNdx == i)
 			{
-				finger.x = getFinger(evt).x;
-				finger.y = getFinger(evt).y;
-				bombs[i].drag(finger.x, finger.y, sf);
+				fingers[i].pos = getFinger(evt, i);
+				bombs[j].drag(fingers[i].pos);
 			}
 		}
 	}
@@ -145,13 +152,53 @@ function ondrag(evt)
 
 function onrelease(evt)
 {
-	finger.x = -1;
-	finger.y = -1;
-	fingerDown = false;
-	touches = 0;
-
+	var released = false;
 	for (var i = 0; i < bombs.length; i++)
-		bombs[i].release();
+	{
+		if (bombs[i].pressed && bombs[i].canPress(getReleasedFinger(evt, 0)))
+		{
+			var index = -1;
+			for (var j = 0; j < fingers.length; j++)
+			{
+				if (fingers[j].index == bombs[i].fingerNdx)
+				{
+					index = j;
+					removeType = "on obj";
+					break;
+				}
+			}
+			if (index > -1)
+			{
+				fingers.splice(index, 1);
+				bombs[i].release();
+				released = true;
+				break;
+			}
+		}
+	}
+
+	if (!released)
+	{
+		for (var i = 0; i < bombs.length; i++)
+		{
+			bombs[i].release();
+		}
+		fingers = [];
+		removeType = "off obj";
+	}
+
+	touches -= touches > 0 ? 1 : 0;
+}
+
+function swapBombToBot(ndx)
+{
+	var temp = bombs[ndx];	// the element we want at the bottom
+
+	for (var i = ndx; i < bombs.length-1; i++)	// start for loop at the index, don't do last element (none in front)
+	{
+		bombs[i] = bombs[i+1];	// replace this element with the one in front of it
+	}
+	bombs[bombs.length-1] = temp;	// put the desired element at the bottom
 }
 
 function loop()
@@ -174,16 +221,11 @@ function draw()
 	ctx.fillRect(0, 0, width, height);
 
 	for (var i = 0; i < bombs.length; i++)
-		bombs[i].draw(ctx, sf);
+		bombs[i].draw(ctx);
 
 	ctx.fillStyle = '#fff';
 	ctx.font = "30px Arial";
-	ctx.fillText(touches, 10, 50);
-}
-
-function print(msg)
-{
-	console.log(msg);
+	ctx.fillText(removeType, 10, 50);
 }
 
 main();
