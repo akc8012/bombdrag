@@ -6,7 +6,7 @@ function Bomb(x, y, radius)
 	this.offset = new Vec2(-1, -1);
 	this.radius = radius;
 	this.pressed = false;
-	this.fingerNdx = -1;
+	this.fingerId = -1;
 }
 
 Bomb.prototype.update = function()
@@ -18,19 +18,27 @@ Bomb.prototype.canPress = function(finger)
 {
 	var xDist = Math.abs(finger.x - this.pos.x);
 	var yDist = Math.abs(finger.y - this.pos.y);
-	var distance = (xDist*xDist) + (yDist*yDist);
-	distance = Math.sqrt(distance);
+	var dist = distance(xDist, yDist);
 
-	return distance < this.radius;
+	return dist < this.radius;
 }
 
-Bomb.prototype.press = function(finger, fingerNdx)
+Bomb.prototype.getDist = function(finger)
+{
+	var xDist = Math.abs(finger.x - this.pos.x);
+	var yDist = Math.abs(finger.y - this.pos.y);
+	var dist = distance(xDist, yDist);
+
+	return dist;
+}
+
+Bomb.prototype.press = function(finger, fingerId)
 {
 	if (this.canPress(finger))
 	{
 		this.offset = new Vec2(finger.x - this.pos.x, finger.y - this.pos.y);
 		this.pressed = true;
-		this.fingerNdx = fingerNdx;
+		this.fingerId = fingerId;
 		return true;
 	}
 	return false;
@@ -56,7 +64,7 @@ Bomb.prototype.release = function()
 {
 	this.offset = new Vec2(-1, -1);
 	this.pressed = false;
-	this.fingerNdx = -1;
+	this.fingerId = -1;
 }
 
 Bomb.prototype.draw = function(ctx)

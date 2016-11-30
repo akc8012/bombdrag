@@ -9,7 +9,7 @@ function Vec2(x, y)
 function distance(x, y)
 {
 	var dist = (x*x) + (y*y);
-	dist = Math.sqrt(distance);
+	dist = Math.sqrt(dist);
 	return dist;
 }
 

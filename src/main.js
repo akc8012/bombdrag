@@ -14,10 +14,10 @@ states =
 },
 onTouchDevice;
 
-function Finger(pos, index)
+function Finger(pos, id)
 {
 	this.pos = pos;
-	this.index = index;
+	this.id = id;
 }
 
 var bombs = [],
@@ -109,6 +109,17 @@ function getFinger(evt, i)
 	);
 }
 
+function getFingerById(evt, id)
+{
+	for (var i = 0; i < evt.touches.length; i++)
+	{
+		if (evt.touches[i].identifier == id)
+		{
+			return new Vec2(evt.touches[i].pageX, evt.touches[i].pageY);
+		}
+	}
+}
+
 function getReleasedFinger(evt)
 {
 	return new Vec2(
@@ -119,19 +130,19 @@ function getReleasedFinger(evt)
 
 function onpress(evt)
 {
-	allEvts.push("press");
-	var loops = onTouchDevice ? evt.touches.length : 1;
-	var start = onTouchDevice ? fingers.length : 0;
-	for (var t = start; t < loops; t++)
-	{
-		if (evt.touches)
-			touches = evt.touches.length;
+	//allEvts.push("press");
+	if (evt.touches) touches = evt.touches.length;
 
+	var loops = onTouchDevice ? evt.touches.length : 1;
+	for (var t = 0; t < loops; t++)
+	{
 		for (var b = bombs.length-1; b >= 0; b--)
 		{
-			if (!bombs[b].pressed && bombs[b].press(getFinger(evt, t), frames%1000))
+			var fingerPos = getFinger(evt, t);
+			var id = onTouchDevice ? evt.touches[t].identifier : 0;
+			if (!bombs[b].pressed && bombs[b].press(fingerPos, id))
 			{
-				fingers.push(new Finger(getFinger(evt, t), frames%1000));
+				fingers.push(new Finger(fingerPos, id));
 				swapBombToBot(b);
 				break;
 			}
@@ -141,14 +152,17 @@ function onpress(evt)
 
 function ondrag(evt)
 {
-	allEvts.push("drag");
+	//allEvts.push("drag");
+	if (evt.touches) touches = evt.touches.length;
+
 	for (var f = 0; f < fingers.length; f++)
 	{
 		for (var b = 0; b < bombs.length; b++)
 		{
-			if (bombs[b].fingerNdx == fingers[f].index)
+			if (fingers[f].id == bombs[b].fingerId)
 			{
-				fingers[f].pos = getFinger(evt, f);
+				var newFingerPos = onTouchDevice ? getFingerById(evt, fingers[f].id) : getFinger(evt, f);
+				fingers[f].pos = newFingerPos;
 				bombs[b].drag(fingers[f].pos);
 			}
 		}
@@ -157,25 +171,27 @@ function ondrag(evt)
 
 function onrelease(evt)
 {
-	allEvts.push("release");
+	//allEvts.push("release");
+	if (evt.touches) touches = evt.touches.length;
+	
 	var released = false;
 	for (var b = 0; b < bombs.length; b++)
 	{
 		if (bombs[b].pressed && bombs[b].canPress(getReleasedFinger(evt, 0)))
 		{
-			var index = -1;
+			var id = -1;
 			for (var f = 0; f < fingers.length; f++)
 			{
-				if (fingers[f].index == bombs[b].fingerNdx)
+				if (fingers[f].id == bombs[b].fingerId)
 				{
-					index = f;
+					id = f;
 					removeType = "on obj";
 					break;
 				}
 			}
-			if (index > -1)
+			if (id > -1)
 			{
-				fingers.splice(index, 1);
+				fingers.splice(id, 1);
 				bombs[b].release();
 				released = true;
 				break;
@@ -195,7 +211,7 @@ function onrelease(evt)
 		pressedFrame = frames+1;
 	}
 
-	touches -= touches > 0 ? 1 : 0;
+	//touches -= touches > 0 ? 1 : 0;
 }
 
 function swapBombToBot(ndx)
@@ -240,19 +256,19 @@ function draw()
 	for (var i = 0; i < fingers.length; i++)
 	{
 		string += i;
-		string += ", ndx: " + fingers[i].index;
+		string += ", id: " + fingers[i].id;
 
 		ctx.fillText(string, 10, (50*i)+50);
 		string = "";
 	}
 
-	ctx.fillText("fingers: " + fingers.length, 10, height-10);
+	ctx.fillText("touches: " + touches, 10, height-10);
 
 	ctx.font = "20px Arial";
 	for (var i = 0; i < bombs.length; i++)
 	{
 		string += i;
-		string += ", ndx: " + bombs[i].fingerNdx;
+		string += ", id: " + bombs[i].fingerId;
 
 		ctx.fillText(string, width-100, (35*i)+35);
 		string = "";
@@ -265,7 +281,7 @@ function draw()
 	{
 		string += allEvts[i];
 
-		ctx.fillText(string, width-75, (35*(allEvts.length-i))+250);
+		ctx.fillText(string, width-100, (35*(allEvts.length-i))+250);
 		string = "";
 	}
 }
