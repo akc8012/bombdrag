@@ -112,10 +112,18 @@ function getFingerById(evt, id)
 	for (var i = 0; i < evt.touches.length; i++)
 	{
 		if (evt.touches[i].identifier == id)
-		{
 			return new Vec2(evt.touches[i].pageX, evt.touches[i].pageY);
-		}
 	}
+}
+
+function isIdBeingUsed(id)
+{
+	for (var i = 0; i < fingers.length; i++)
+	{
+		if (fingers[i].id == id)
+			return true;
+	}
+	return false;
 }
 
 function onpress(evt)
@@ -130,7 +138,7 @@ function onpress(evt)
 		{
 			var fingerPos = getFinger(evt, t);
 			var id = onTouchDevice ? evt.touches[t].identifier : 0;
-			if (!bombs[b].pressed && bombs[b].press(fingerPos, id))
+			if (!bombs[b].pressed && !isIdBeingUsed(id) && bombs[b].press(fingerPos, id))
 			{
 				fingers.push(new Finger(fingerPos, id));
 				swapBombToBot(b);
