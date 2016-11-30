@@ -25,6 +25,7 @@ fingers = [];
 
 var touches = 0;	// used for debugging, not actually needed
 var removeType = "";
+var pressedFrame = -1;
 
 function main()
 {
@@ -118,17 +119,17 @@ function getReleasedFinger(evt)
 function onpress(evt)
 {
 	var loops = onTouchDevice ? evt.touches.length : 1;
-	for (var i = 0; i < loops; i++)
+	for (var t = 0; t < loops; t++)
 	{
 		if (evt.touches)
 			touches = evt.touches.length;
 
-		for (var j = bombs.length-1; j >= 0; j--)
+		for (var b = bombs.length-1; b >= 0; b--)
 		{
-			if (bombs[j].press(getFinger(evt, i), i))
+			if (!bombs[b].pressed && bombs[b].press(getFinger(evt, t), t))
 			{
-				fingers.push(new Finger(getFinger(evt, i), i));
-				swapBombToBot(j);
+				fingers.push(new Finger(getFinger(evt, t), t));
+				swapBombToBot(b);
 				break;
 			}
 		}
@@ -137,14 +138,14 @@ function onpress(evt)
 
 function ondrag(evt)
 {
-	for (var i = 0; i < fingers.length; i++)
+	for (var f = 0; f < fingers.length; f++)
 	{
-		for (var j = 0; j < bombs.length; j++)
+		for (var b = 0; b < bombs.length; b++)
 		{
-			if (bombs[j].fingerNdx == i)
+			if (bombs[b].fingerNdx == fingers[f].index)
 			{
-				fingers[i].pos = getFinger(evt, i);
-				bombs[j].drag(fingers[i].pos);
+				fingers[f].pos = getFinger(evt, f);
+				bombs[b].drag(fingers[f].pos);
 			}
 		}
 	}
@@ -153,16 +154,16 @@ function ondrag(evt)
 function onrelease(evt)
 {
 	var released = false;
-	for (var i = 0; i < bombs.length; i++)
+	for (var b = 0; b < bombs.length; b++)
 	{
-		if (bombs[i].pressed && bombs[i].canPress(getReleasedFinger(evt, 0)))
+		if (bombs[b].pressed && bombs[b].canPress(getReleasedFinger(evt, 0)))
 		{
 			var index = -1;
-			for (var j = 0; j < fingers.length; j++)
+			for (var f = 0; f < fingers.length; f++)
 			{
-				if (fingers[j].index == bombs[i].fingerNdx)
+				if (fingers[f].index == bombs[b].fingerNdx)
 				{
-					index = j;
+					index = f;
 					removeType = "on obj";
 					break;
 				}
@@ -170,7 +171,7 @@ function onrelease(evt)
 			if (index > -1)
 			{
 				fingers.splice(index, 1);
-				bombs[i].release();
+				bombs[b].release();
 				released = true;
 				break;
 			}
@@ -179,12 +180,14 @@ function onrelease(evt)
 
 	if (!released)
 	{
-		for (var i = 0; i < bombs.length; i++)
+		for (var b = 0; b < bombs.length; b++)
 		{
-			bombs[i].release();
+			bombs[b].release();
 		}
 		fingers = [];
 		removeType = "off obj";
+
+		pressedFrame = frames+1;
 	}
 
 	touches -= touches > 0 ? 1 : 0;
@@ -203,18 +206,19 @@ function swapBombToBot(ndx)
 
 function loop()
 {
-	update();
-	draw();
+	frames++;
+	update(frames);
+	draw(frames);
 
 	window.requestAnimationFrame(loop, canvas);
 }
 
-function update()
+function update(frames)
 {
-	frames++;
+
 }
 
-function draw()
+function draw(frames)
 {
 	// redraw background over contents of prior frame
 	ctx.fillStyle = "#333";
@@ -225,7 +229,18 @@ function draw()
 
 	ctx.fillStyle = '#fff';
 	ctx.font = "30px Arial";
-	ctx.fillText(removeType, 10, 50);
+
+
+	var string = "";
+
+	for (var i = 0; i < fingers.length; i++)
+	{
+		string += i;
+		string += ", ndx: " + fingers[i].index;
+
+		ctx.fillText(string, 10, (50*i)+50);
+		string = "";
+	}
 }
 
 main();
