@@ -14,15 +14,14 @@ Bomb.prototype.update = function()
 	
 }
 
-Bomb.prototype.canPress = function(finger, leniency)
+Bomb.prototype.canPress = function(finger)
 {
-	if (!leniency) leniency = 0;
 	var xDist = Math.abs(finger.x - this.pos.x);
 	var yDist = Math.abs(finger.y - this.pos.y);
 	var distance = (xDist*xDist) + (yDist*yDist);
 	distance = Math.sqrt(distance);
 
-	return distance+leniency < this.radius;
+	return distance < this.radius;
 }
 
 Bomb.prototype.press = function(finger, fingerNdx)

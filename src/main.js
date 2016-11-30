@@ -26,6 +26,7 @@ fingers = [];
 var touches = 0;	// used for debugging, not actually needed
 var removeType = "";
 var pressedFrame = -1;
+var allEvts = [];
 
 function main()
 {
@@ -79,7 +80,7 @@ function init()
 	frames = 0;
 
 	var radius = 25*sf;
-	for (var i = 0; i < 12; i++)
+	for (var i = 0; i < 6; i++)
 		bombs.push(new Bomb(randomRange(radius, width-radius), 
 			randomRange(radius, height-radius), radius));
 }
@@ -118,17 +119,19 @@ function getReleasedFinger(evt)
 
 function onpress(evt)
 {
+	allEvts.push("press");
 	var loops = onTouchDevice ? evt.touches.length : 1;
-	for (var t = 0; t < loops; t++)
+	var start = onTouchDevice ? fingers.length : 0;
+	for (var t = start; t < loops; t++)
 	{
 		if (evt.touches)
 			touches = evt.touches.length;
 
 		for (var b = bombs.length-1; b >= 0; b--)
 		{
-			if (!bombs[b].pressed && bombs[b].press(getFinger(evt, t), t))
+			if (!bombs[b].pressed && bombs[b].press(getFinger(evt, t), frames%1000))
 			{
-				fingers.push(new Finger(getFinger(evt, t), t));
+				fingers.push(new Finger(getFinger(evt, t), frames%1000));
 				swapBombToBot(b);
 				break;
 			}
@@ -138,6 +141,7 @@ function onpress(evt)
 
 function ondrag(evt)
 {
+	allEvts.push("drag");
 	for (var f = 0; f < fingers.length; f++)
 	{
 		for (var b = 0; b < bombs.length; b++)
@@ -153,6 +157,7 @@ function ondrag(evt)
 
 function onrelease(evt)
 {
+	allEvts.push("release");
 	var released = false;
 	for (var b = 0; b < bombs.length; b++)
 	{
@@ -207,18 +212,18 @@ function swapBombToBot(ndx)
 function loop()
 {
 	frames++;
-	update(frames);
-	draw(frames);
+	update();
+	draw();
 
 	window.requestAnimationFrame(loop, canvas);
 }
 
-function update(frames)
+function update()
 {
 
 }
 
-function draw(frames)
+function draw()
 {
 	// redraw background over contents of prior frame
 	ctx.fillStyle = "#333";
@@ -232,13 +237,35 @@ function draw(frames)
 
 
 	var string = "";
-
 	for (var i = 0; i < fingers.length; i++)
 	{
 		string += i;
 		string += ", ndx: " + fingers[i].index;
 
 		ctx.fillText(string, 10, (50*i)+50);
+		string = "";
+	}
+
+	ctx.fillText("fingers: " + fingers.length, 10, height-10);
+
+	ctx.font = "20px Arial";
+	for (var i = 0; i < bombs.length; i++)
+	{
+		string += i;
+		string += ", ndx: " + bombs[i].fingerNdx;
+
+		ctx.fillText(string, width-100, (35*i)+35);
+		string = "";
+	}
+
+	while (allEvts.length > 6)
+		allEvts.shift();
+
+	for (var i = allEvts.length-1; i >= 0; i--)
+	{
+		string += allEvts[i];
+
+		ctx.fillText(string, width-75, (35*(allEvts.length-i))+250);
 		string = "";
 	}
 }
