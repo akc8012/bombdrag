@@ -24,9 +24,7 @@ var bombs = [],
 fingers = [];
 
 var touches = 0;	// used for debugging, not actually needed
-var removeType = "";
-var pressedFrame = -1;
-var allEvts = [];
+var printMsg = [];
 
 function main()
 {
@@ -120,17 +118,9 @@ function getFingerById(evt, id)
 	}
 }
 
-function getReleasedFinger(evt)
-{
-	return new Vec2(
-		onTouchDevice ? evt.changedTouches[0].pageX : getMousePos(canvas, evt).x,
-		onTouchDevice ? evt.changedTouches[0].pageY : getMousePos(canvas, evt).y
-	);
-}
-
 function onpress(evt)
 {
-	//allEvts.push("press");
+	//printMsg.push("press");
 	if (evt.touches) touches = evt.touches.length;
 
 	var loops = onTouchDevice ? evt.touches.length : 1;
@@ -152,7 +142,7 @@ function onpress(evt)
 
 function ondrag(evt)
 {
-	//allEvts.push("drag");
+	//printMsg.push("drag");
 	if (evt.touches) touches = evt.touches.length;
 
 	for (var f = 0; f < fingers.length; f++)
@@ -171,47 +161,24 @@ function ondrag(evt)
 
 function onrelease(evt)
 {
-	//allEvts.push("release");
+	//printMsg.push("release");
 	if (evt.touches) touches = evt.touches.length;
-	
-	var released = false;
-	for (var b = 0; b < bombs.length; b++)
+
+	for (var f = 0; f < fingers.length; f++)
 	{
-		if (bombs[b].pressed && bombs[b].canPress(getReleasedFinger(evt, 0)))
+		if (!onTouchDevice || fingers[f].id == evt.changedTouches[0].identifier)
 		{
-			var id = -1;
-			for (var f = 0; f < fingers.length; f++)
+			for (var b = 0; b < bombs.length; b++)
 			{
-				if (fingers[f].id == bombs[b].fingerId)
+				if (bombs[b].fingerId == fingers[f].id)
 				{
-					id = f;
-					removeType = "on obj";
-					break;
+					fingers.splice(f, 1);
+					bombs[b].release();
+					return;
 				}
 			}
-			if (id > -1)
-			{
-				fingers.splice(id, 1);
-				bombs[b].release();
-				released = true;
-				break;
-			}
 		}
 	}
-
-	if (!released)
-	{
-		for (var b = 0; b < bombs.length; b++)
-		{
-			bombs[b].release();
-		}
-		fingers = [];
-		removeType = "off obj";
-
-		pressedFrame = frames+1;
-	}
-
-	//touches -= touches > 0 ? 1 : 0;
 }
 
 function swapBombToBot(ndx)
@@ -274,14 +241,14 @@ function draw()
 		string = "";
 	}
 
-	while (allEvts.length > 6)
-		allEvts.shift();
+	while (printMsg.length > 6)
+		printMsg.shift();
 
-	for (var i = allEvts.length-1; i >= 0; i--)
+	for (var i = printMsg.length-1; i >= 0; i--)
 	{
-		string += allEvts[i];
+		string += printMsg[i];
 
-		ctx.fillText(string, width-100, (35*(allEvts.length-i))+250);
+		ctx.fillText(string, width-100, (35*(printMsg.length-i))+250);
 		string = "";
 	}
 }
