@@ -21,10 +21,13 @@ function Finger(pos, id)
 }
 
 var bombs = [],
-fingers = [];
+fingers = [],
+targetBoxes = [];
 
-var touches = 0;	// used for debugging, not actually needed
-var printMsg = [];
+// debug stuff
+var drawDebugStuff = false,
+touches = 0,
+printMsg = [];
 
 function main()
 {
@@ -77,10 +80,20 @@ function init()
 	currentstate = states.Splash;
 	frames = 0;
 
-	var radius = 25*sf;
-	for (var i = 0; i < 6; i++)
-		bombs.push(new Bomb(randomRange(radius, width-radius), 
-			randomRange(radius, height-radius), radius));
+	addBomb();
+
+	var boxSize = 120*sf;
+	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), height-boxSize, boxSize, boxSize, "cyan"));
+	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), 0, boxSize, boxSize, "magenta"));
+}
+
+function addBomb()
+{
+	var radius = 28*sf;
+	var side = randomRange(0, 2);
+	var spawnX = side == 0 ? radius : width+radius;
+	var color = side == 0 ? "cyan" : "magenta";
+	bombs.push(new Bomb(spawnX, height/2, radius, color));
 }
 
 function randomRange(min, max)
@@ -211,7 +224,19 @@ function loop()
 
 function update()
 {
+	while (printMsg.length > 6)
+		printMsg.shift();
 
+	if (frames % 50 == 0)
+		addBomb();
+
+	for (var i = 0; i < bombs.length; i++)
+	{
+		bombs[i].update();
+
+		if (bombs[i].getDestroyed)
+			bombs.splice(i, 1);
+	}
 }
 
 function draw()
@@ -220,12 +245,20 @@ function draw()
 	ctx.fillStyle = "#333";
 	ctx.fillRect(0, 0, width, height);
 
+	for (var i = 0; i < targetBoxes.length; i++)
+		targetBoxes[i].draw(ctx);
+
 	for (var i = 0; i < bombs.length; i++)
 		bombs[i].draw(ctx);
 
+	if (drawDebugStuff)
+		drawDebug();
+}
+
+function drawDebug()
+{
 	ctx.fillStyle = '#fff';
 	ctx.font = "30px Arial";
-
 
 	var string = "";
 	for (var i = 0; i < fingers.length; i++)
@@ -248,9 +281,6 @@ function draw()
 		ctx.fillText(string, width-100, (35*i)+35);
 		string = "";
 	}
-
-	while (printMsg.length > 6)
-		printMsg.shift();
 
 	for (var i = printMsg.length-1; i >= 0; i--)
 	{
