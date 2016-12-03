@@ -2,7 +2,7 @@
 
 function Bomb(x, y, radius, color)
 {
-	this.pos = new Vec2(-10, y);
+	this.pos = new Vec2(x, y);
 	do
 	{
 		this.vel = new Vec2(randomRange(-3, 3), randomRange(-3, 3));
@@ -15,6 +15,7 @@ function Bomb(x, y, radius, color)
 	this.pressed = false;
 	this.fingerId = -1;
 	this.getDestroyed = false;
+	this.timeArc = (3*Math.PI)/2;
 }
 
 Bomb.prototype.update = function()
@@ -23,6 +24,8 @@ Bomb.prototype.update = function()
 	{
 		this.pos.x += this.vel.x;
 		this.pos.y += this.vel.y;
+
+		//this.pos.x += (width - this.pos.x) * .1;
 	}
 
 	if ((this.vel.x > 0 && this.pos.x-this.radius > 0) || 
@@ -32,6 +35,13 @@ Bomb.prototype.update = function()
 			this.vel.x *= -1;
 		if (this.pos.y-this.radius < 0 || this.pos.y+this.radius > height)
 			this.vel.y *= -1;
+	}
+
+	this.timeArc += 0.01;
+	if (this.timeArc >= ((3*Math.PI)/2) + (2*Math.PI))
+	{
+		this.timeArc -= 0.01;
+		endGame(this);
 	}
 }
 
@@ -89,15 +99,30 @@ Bomb.prototype.release = function()
 
 	for (var i = 0; i < targetBoxes.length; i++)
 	{
-		if (this.color == targetBoxes[i].color && targetBoxes[i].isInsideBox(this.pos))
-			this.getDestroyed = true;
+		if (targetBoxes[i].isInsideBox(this.pos))
+		{
+			if (this.color == targetBoxes[i].color)
+			{
+				addScore(this.color);
+				this.getDestroyed = true;
+			}
+			else
+				endGame(this);
+		}
 	}
 }
 
 Bomb.prototype.draw = function(ctx)
 {
+	var drawRadius = this.radius * (this.pressed ? 1.12 : 1);
 	ctx.beginPath();
-	ctx.arc(this.pos.x, this.pos.y, this.radius * (this.pressed ? 1.12 : 1), 0, 2*Math.PI);
-	ctx.fillStyle = this.color;
+	ctx.arc(this.pos.x, this.pos.y, drawRadius, 0, 2*Math.PI);
+	ctx.fillStyle = this.color == colors.cyan ? "cyan" : "magenta";
 	ctx.fill();
+
+	ctx.beginPath();
+	ctx.lineWidth = 3;
+	ctx.strokeStyle = "yellow";
+	ctx.arc(this.pos.x, this.pos.y, drawRadius, this.timeArc, ((3*Math.PI)/2) + (2*Math.PI));
+	ctx.stroke();
 }

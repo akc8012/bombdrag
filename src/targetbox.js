@@ -28,7 +28,7 @@ TargetBox.prototype.draw = function(ctx)
 
 	ctx.beginPath();
 	ctx.lineWidth = "6";
-	ctx.strokeStyle = this.color;
+	ctx.strokeStyle = this.color == colors.cyan ? "cyan" : "magenta";
 	ctx.rect(this.pos.x+(ctx.lineWidth/2), this.pos.y+(ctx.lineWidth/2), 
 		this.size.x-(ctx.lineWidth), this.size.y-(ctx.lineWidth)); 
 	ctx.stroke();

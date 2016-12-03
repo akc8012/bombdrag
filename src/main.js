@@ -10,7 +10,7 @@ frames,
 currentstate,
 states =
 {
-	Splash: 0, Game: 1, Score: 2
+	Splash: 0, Game: 1, End: 2
 },
 onTouchDevice;
 
@@ -22,7 +22,8 @@ function Finger(pos, id)
 
 var bombs = [],
 fingers = [],
-targetBoxes = [];
+targetBoxes = [],
+score = [0, 0];
 
 // debug stuff
 var drawDebugStuff = false,
@@ -74,26 +75,35 @@ function isTouchDevice()
 		|| navigator.maxTouchPoints;       // works on IE10/11 and Surface
 };
 
-// calling this will basically reset the game
 function init()
 {
 	currentstate = states.Splash;
 	frames = 0;
 
-	addBomb();
-
 	var boxSize = 120*sf;
-	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), height-boxSize, boxSize, boxSize, "cyan"));
-	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), 0, boxSize, boxSize, "magenta"));
+	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), height-boxSize, boxSize, boxSize, colors.cyan));
+	targetBoxes.push(new TargetBox((width/2)-(boxSize/2), 0, boxSize, boxSize, colors.magenta));
+}
+
+function resetGame()
+{
+	currentstate = states.Game;
+	score = [0, 0];
+	bombs = [];
 }
 
 function addBomb()
 {
 	var radius = 28*sf;
 	var side = randomRange(0, 2);
-	var spawnX = side == 0 ? radius : width+radius;
-	var color = side == 0 ? "cyan" : "magenta";
-	bombs.push(new Bomb(spawnX, height/2, radius, color));
+	var spawnX = side == 0 ? -radius : width+radius;
+	var color = randomRange(0, 2);	//side == 0 ? colors.cyan : colors.magenta;
+	bombs.unshift(new Bomb(spawnX, height/2, radius, color));
+}
+
+function addScore(ndx)
+{
+	score[ndx]++;
 }
 
 function randomRange(min, max)
@@ -141,6 +151,12 @@ function isIdBeingUsed(id)
 
 function onpress(evt)
 {
+	if (currentstate == states.Splash || currentstate == states.End)
+	{
+		resetGame();
+		return;
+	}
+
 	//printMsg.push("press");
 	if (evt.touches) touches = evt.touches.length;
 
@@ -213,6 +229,13 @@ function swapBombToBot(ndx)
 	bombs[bombs.length-1] = temp;	// put the desired element at the bottom
 }
 
+function endGame(deadBomb)
+{
+	currentstate = states.End;
+	bombs = [];
+	bombs.push(deadBomb);
+}
+
 function loop()
 {
 	frames++;
@@ -227,15 +250,21 @@ function update()
 	while (printMsg.length > 6)
 		printMsg.shift();
 
-	if (frames % 50 == 0)
-		addBomb();
-
-	for (var i = 0; i < bombs.length; i++)
+	if (currentstate == states.Game)
 	{
-		bombs[i].update();
+		if (frames % 50 == 0)
+			addBomb();
 
-		if (bombs[i].getDestroyed)
-			bombs.splice(i, 1);
+		for (var i = 0; i < bombs.length; i++)
+		{
+			if (bombs[i].getDestroyed)
+			{
+				bombs.splice(i, 1);
+				continue;
+			}
+
+			bombs[i].update();
+		}
 	}
 }
 
@@ -248,8 +277,37 @@ function draw()
 	for (var i = 0; i < targetBoxes.length; i++)
 		targetBoxes[i].draw(ctx);
 
+	if (currentstate == states.Game)
+	{
+		ctx.font = "52px Arial";
+		ctx.textAlign = "center";
+
+		for (var i = 0; i < targetBoxes.length; i++)
+		{
+			ctx.fillStyle = targetBoxes[i].color == 0 ? "cyan" : "magenta";
+			ctx.fillText(score[i], width/2, targetBoxes[i].pos.y + (targetBoxes[i].size.y/2)+16);
+		}
+	}
+
 	for (var i = 0; i < bombs.length; i++)
 		bombs[i].draw(ctx);
+
+	if (currentstate == states.Splash)
+	{
+		ctx.fillStyle = "cyan";
+		ctx.font = "48px Arial";
+		ctx.textAlign = "center";
+		ctx.fillText("Circles", width/2, height/2);
+	}
+	if (currentstate == states.End)
+	{
+		ctx.fillStyle = "magenta";
+		ctx.font = "48px Arial";
+		ctx.textAlign = "center";
+		ctx.fillText("Final score:", width/2, (height/2)-20);
+		ctx.fillStyle = "cyan";
+		ctx.fillText(score[0]+score[1], width/2, (height/2)+40);
+	}
 
 	if (drawDebugStuff)
 		drawDebug();
@@ -259,6 +317,7 @@ function drawDebug()
 {
 	ctx.fillStyle = '#fff';
 	ctx.font = "30px Arial";
+	ctx.textAlign = "left";
 
 	var string = "";
 	for (var i = 0; i < fingers.length; i++)

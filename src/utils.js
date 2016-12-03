@@ -17,3 +17,8 @@ function print(msg)
 {
 	console.log(msg);
 }
+
+var colors =
+{
+	cyan: 0, magenta: 1
+};
